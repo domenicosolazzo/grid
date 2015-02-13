@@ -34,6 +34,25 @@ class ImageLoader(storage: ImageStorage) extends Controller with ArgoHelpers {
   val keyStore = new KeyStore(Config.keyStoreBucket, Config.awsCredentials)
   val Authenticated = auth.Authenticated(keyStore, rootUri)
 
+  def logDuration[T](future: Future[T], desc: String) = {
+    val start = new DateTime
+    future.onComplete(_ => {
+      val end = new DateTime
+      val duration = end.getMillis - start.getMillis
+      Logger.info(s"$desc ran in $duration")
+    })
+    future
+  }
+
+  def logDuration[T](desc: String)(func: => T) = {
+    val start = new DateTime
+    val ret = func
+    val end = new DateTime
+    val duration = end.getMillis - start.getMillis
+    Logger.info(s"$desc: $duration")
+    ret
+  }
+
   def index = Action {
     val response = Json.obj(
       "data"  -> Json.obj("description" -> "This is the Loader Service"),
@@ -77,6 +96,7 @@ class ImageLoader(storage: ImageStorage) extends Controller with ArgoHelpers {
     }
 
     future.onComplete(_ => tempFile.delete())
+    logDuration(future, "load")
     future
   }
 
@@ -95,6 +115,12 @@ class ImageLoader(storage: ImageStorage) extends Controller with ArgoHelpers {
     val dimensionsFuture = FileMetadata.dimensions(tempFile)
     val fileMetadataFuture = FileMetadata.fromIPTCHeaders(tempFile)
 
+    logDuration(uriFuture, "storeImage")
+    logDuration(thumbFuture, "createThumbnail")
+    logDuration(dimensionsFuture, "dimensions")
+    logDuration(fileMetadataFuture, "fileMetadata")
+
+
     // TODO: better error handling on all futures. Similar to metadata
     bracket(thumbFuture)(_.delete) { thumb =>
       val result = for {
@@ -104,13 +130,15 @@ class ImageLoader(storage: ImageStorage) extends Controller with ArgoHelpers {
         metadata    = ImageMetadata.fromFileMetadata(fileMetadata)
         cleanMetadata = MetadataCleaner.clean(metadata)
         sourceAsset = Asset(uri, tempFile.length, mimeType, dimensions)
-        thumbUri   <- storage.storeThumbnail(id, thumb, mimeType)
+        thumbUri   <- logDuration( storage.storeThumbnail(id, thumb, mimeType), "storeThumbnail" )
         thumbSize   = thumb.length
         thumbDimensions <- FileMetadata.dimensions(thumb)
         thumbAsset  = Asset(thumbUri, thumbSize, mimeType, thumbDimensions)
         image       = Image.upload(id, uploadTime, uploadedBy, identifiers, sourceAsset, thumbAsset, fileMetadata, cleanMetadata)
       } yield {
-        Notifications.publish(Json.toJson(image), "image")
+        logDuration("publish") {
+          Notifications.publish(Json.toJson(image), "image")
+        }
         // TODO: centralise where all these URLs are constructed
         Accepted(Json.obj("uri" -> s"$apiUri/images/$id")).as(ArgoMediaType)
       }

@@ -2,6 +2,8 @@ package com.gu.mediaservice.lib.aws
 
 import java.io.{FileInputStream, File}
 import java.net.URI
+import play.api.Logger
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.JavaConverters._
 
@@ -32,6 +34,8 @@ class S3(credentials: AWSCredentials) {
   def store(bucket: Bucket, id: Key, file: File, mimeType: Option[String] = None, meta: Metadata = Map.empty, cacheControl: Option[String] = None)
            (implicit ex: ExecutionContext): Future[URI] =
     Future {
+      Logger.info(s"store started $bucket/$id (${file.length} bytes)")
+      val start = new DateTime
       val metadata = new ObjectMetadata
       mimeType.foreach(metadata.setContentType)
       cacheControl.foreach(metadata.setCacheControl)
@@ -39,6 +43,9 @@ class S3(credentials: AWSCredentials) {
       metadata.setContentLength(file.length)
       val req = new PutObjectRequest(bucket, id, new FileInputStream(file), metadata)
       client.putObject(req)
+      val end = new DateTime
+      val duration = end.getMillis - start.getMillis
+      Logger.info(s"store finished $bucket/$id [$duration ms]")
       objectUrl(bucket, id)
     }
 
