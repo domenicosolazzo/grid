@@ -32,6 +32,7 @@ System.config({
     "traceur": "github:jmcriffey/bower-traceur@0.0.88",
     "traceur-runtime": "github:jmcriffey/bower-traceur-runtime@0.0.88",
     "ua-parser-js": "npm:ua-parser-js@0.7.3",
+    "uri-templates": "npm:uri-templates@0.1.5",
     "github:angular-ui/ui-router@0.2.13": {
       "angular": "github:angular/bower-angular@1.3.15"
     },
