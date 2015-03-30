@@ -1,9 +1,9 @@
 package controllers
 
 import lib.Config
-import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 import com.gu.mediaservice.lib.auth.{ArgoErrorResponses, PanDomainAuthActions}
+import com.gu.mediaservice.lib.argo.ArgoHelpers
 import com.gu.pandomainauth.model.AuthenticatedUser
 import com.gu.pandomainauth.service.GoogleAuthException
 
@@ -12,22 +12,26 @@ import scala.util.{Success, Try, Failure}
 
 object Panda extends Controller
   with PanDomainAuthActions
+  with ArgoHelpers
   with ArgoErrorResponses {
 
   override lazy val authCallbackBaseUri = Config.rootUri
-  def loginUri: String = Config.loginUri
+  override lazy val loginUriTemplate    = Config.loginUriTemplate
 
+
+  // FIXME: how to use usual Authenticated action helper for this? separate Controller?
   def session = Action { implicit request =>
     readAuthenticatedUser(request).map { case AuthenticatedUser(user, _, _, _, _) =>
-      Ok(Json.obj("data" -> Json.obj("user" ->
-        Json.obj(
+      val userData = Map("user" -> (
+        Map(
           "name"      -> s"${user.firstName} ${user.lastName}",
           "firstName" -> user.firstName,
           "lastName"  -> user.lastName,
-          "email"     -> user.email,
-          "avatarUrl" -> user.avatarUrl
-        ))))
-    }.getOrElse(Unauthorized)
+          "email"     -> user.email
+        ) ++ user.avatarUrl.map("avatarUrl" -> _)
+      ))
+      respond(userData)
+    }.getOrElse(notAuthenticatedResult)
   }
 
   // Trigger the auth cycle
