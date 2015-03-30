@@ -40,9 +40,9 @@ object MediaApi extends Controller with ArgoHelpers {
 
   val commonTransformers = new Transformers(Config.services)
 
-  import Config.{rootUri, cropperUri, loaderUri, metadataUri, kahunaUri, imgopsUri, loginUri}
+  import Config.{rootUri, cropperUri, loaderUri, metadataUri, kahunaUri, imgopsUri, loginUriTemplate}
 
-  val Authenticated = auth.Authenticated(keyStore, loginUri, Config.kahunaUri)
+  val Authenticated = auth.Authenticated(keyStore, loginUriTemplate, Config.kahunaUri)
 
 
   val searchParamList = List("q", "ids", "offset", "length", "fromDate", "toDate",
