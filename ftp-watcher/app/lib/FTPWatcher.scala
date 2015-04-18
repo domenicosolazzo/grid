@@ -1,5 +1,7 @@
 package lib
 
+import scala.collection.concurrent.{TrieMap => ConcurrentMap}
+
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -9,8 +11,8 @@ import org.apache.commons.io.FilenameUtils._
 
 import scalaz.syntax.bind._
 import scalaz.concurrent.Task
-import scalaz.stream.{Process, io, Writer, Channel, Sink, Process1, process1}
-import scalaz.\/
+import scalaz.stream._
+import scalaz.{\/-, \/, -\/}
 import Process._
 import io.resource
 
@@ -29,11 +31,44 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) extend
       .to(deleteFile)
       .run
 
+//  def uniquely(c: Channel[Task, FilePath, File]): Process1[FilePath, FilePath] = {
+//    def go(acc: Set[FilePath]): Process1[FilePath, FilePath] =
+//      await1[FilePath].flatMap { case a =>
+//        if (! acc.contains(a))
+//          emit(a) fby go(acc + a)
+//        else
+//          go(acc)
+//      }
+//    go(Set.empty)
+//  }
+
+  val uploadingFiles: ConcurrentMap[FilePath, Unit] = ConcurrentMap.empty
+
+
+//    def retrieveAndUpload: Channel[Task, FilePath, FailedUpload \/ FilePath] =
+////  def retrieveAndUpload: Writer[Task, FailedUpload, FilePath] =
+//      retrieveFile.
+//        through(uploadImage)
+////        concurrently(3)(uploadImage)
+////    await1[FilePath].flatMap { case f =>
+////      retrieveFile(f).
+////        concurrently(3)(uploadImage)
+////    }
+
+
   /** A process which logs failed uploads on the left hand side, and successful ones on the right */
   def uploads: Writer[Task, FailedUpload, FilePath] =
     whileActive(100.millis)(watchFiles(10))
+      .filter { path =>
+        uploadingFiles.putIfAbsent(path, ()).isEmpty
+      }
       .through(retrieveFile)
       .concurrently(3)(uploadImage)
+      .map {
+        case v @ \/-(path) => uploadingFiles.remove(path); v
+        case v @ -\/(failed) => uploadingFiles.remove(failed.path); v
+      }
+
 
   def watchFiles(maxPerDir: Int): Process[Task, FilePath] =
     sleepIfEmpty(100.millis)(withClient(listFiles(maxPerDir))).unchunk
@@ -50,6 +85,7 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) extend
   def retrieveFile: Channel[Task, FilePath, File] =
     withClient { client =>
       Task.now { path: FilePath =>
+        logger.info(s"START RETRIEVE $path")
         val uploadedBy = path.takeWhile(_ != '/')
 
         logger.info(s"Retrieving file: $path from: $uploadedBy")
@@ -58,6 +94,7 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) extend
         client.retrieveFile(path) map {
           logger.info(s"Retrieved file: $path from: $uploadedBy")
           retrievedImages.increment(List(uploadedByDimension(uploadedBy)))
+          logger.info(s"OK RETRIEVED $path")
           bytes => File(path, bytes, uploadedBy)
         }
       }
@@ -109,6 +146,7 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) extend
 
   def uploadImage: Channel[Task, File, FailedUpload \/ FilePath] =
     Process.constant { case File(path, bytes, uploadedBy) =>
+      logger.info(s"** START UPLOAD $path")
       val uri = Config.imageLoaderUri + "?uploadedBy=" + uploadedBy
       val upload = Task {
         val client = HttpClients.createDefault
@@ -120,6 +158,7 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) extend
         val json = Json.parse(IOUtils.toByteArray(response.getEntity.getContent))
         response.close()
         client.close()
+        logger.info(s"** OK UPLOADED $path")
         val imageUri = (json \ "uri").as[String]
         logger.info(s"Uploaded $path, created $imageUri")
         \/.right(path)
