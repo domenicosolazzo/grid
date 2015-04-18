@@ -17,7 +17,7 @@ import io.resource
 import com.gu.mediaservice.lib.Processes._
 import com.gu.mediaservice.syntax.ProcessSyntax._
 
-class FTPWatcher(host: String, port: Int, user: String, password: String) {
+class FTPWatcher(host: String, port: Int, user: String, password: String) extends Concurrency {
 
   val mediaApiKey = Config.mediaApiKey
   val guMediaApiHeader = "X-Gu-Media-Key"
@@ -33,7 +33,7 @@ class FTPWatcher(host: String, port: Int, user: String, password: String) {
   def uploads: Writer[Task, FailedUpload, FilePath] =
     whileActive(100.millis)(watchFiles(10))
       .through(retrieveFile)
-      .through(uploadImage)
+      .concurrently(3)(uploadImage)
 
   def watchFiles(maxPerDir: Int): Process[Task, FilePath] =
     sleepIfEmpty(100.millis)(withClient(listFiles(maxPerDir))).unchunk
