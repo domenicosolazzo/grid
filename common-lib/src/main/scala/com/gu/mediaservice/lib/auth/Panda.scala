@@ -5,6 +5,7 @@ import com.gu.pandomainauth.action.AuthActions
 import com.gu.pandomainauth.model.AuthenticatedUser
 
 import com.gu.mediaservice.lib.config.Properties
+import org.joda.time.DateTime
 
 trait PanDomainAuthActions extends AuthActions {
 
@@ -12,6 +13,14 @@ trait PanDomainAuthActions extends AuthActions {
 
   override def validateUser(authedUser: AuthenticatedUser): Boolean = {
     (authedUser.user.emailDomain == "***REMOVED***") && authedUser.multiFactor
+  }
+
+//  def now = new DateTime()
+//  def inFuture(duration: Duration) = now.plus(duration)
+  def devExpiryOverride = Some(new DateTime().plusSeconds(10).getMillis)
+  override def generateCookie(authedUser: AuthenticatedUser) = {
+    val updatedUser = devExpiryOverride.fold(authedUser)(expiryOverride => authedUser.copy(expires = expiryOverride))
+    super.generateCookie(updatedUser)
   }
 
   val authCallbackBaseUri: String
