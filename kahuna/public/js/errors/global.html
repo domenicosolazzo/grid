@@ -2,9 +2,9 @@
     <div class="global-error error"
          ng:message="unauthorised">
         ͼ(ݓ_ݓ)ͽ Your session has become invalid.
-        Please <a href="{{ctrl.getCurrentLocation()}}" target="_self" class="coloured-link">login again</a> to reauthenticate.
-    </div>
+        {{$error}}
 
+        <!-- FIXME: don't need error display twice -->
     <div class="global-error error"
          ng:message="authFailed">
         <div>ͼ(ݓ_ݓ)ͽ We couldn't log you back in.</div>
@@ -21,5 +21,15 @@
                target="_self" class="coloured-link">login again</a>
             to reauthenticate.
         </div>
+    </div>
+
+    <div ng-repeat="errorMessage in errorMessages">
+      <!-- use ng-message-exp for a message whose key is given by an expression -->
+      <div ng-message-exp="errorMessage.type">{{ errorMessage.text }}</div>
+    </div>
+
+        Please <a href="{{ctrl.getLoginUrl()}}" target="_self" class="coloured-link">login again</a> to reauthenticate.
+        <!-- The space is required so angular doesn't remove the functionality of the link altogether
+        The target is require to trick angular into not handling it with the router -->
     </div>
 </ng:messages>

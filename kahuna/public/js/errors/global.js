@@ -14,8 +14,9 @@ export var global = angular.module(
 global.factory('globalErrors', [function() {
     var errors = {};
 
-    function trigger(key) {
-        errors[key] = true;
+    function trigger(key, reason) {
+console.log(key, reason)
+        errors[key] = reason || true;
     }
 
     function destroy(key) {
@@ -41,8 +42,15 @@ global.controller('GlobalErrorsCtrl',
     var ctrl = this;
     ctrl.errors = globalErrors.getErrors();
 
+
+console.log("ERRORS", ctrl.errors);
+
     // handy as these can happen anywhere
-    ctrl.getCurrentLocation = () => $location.url();
+    // ctrl.getLoginUrl = () => $location.url();
+    // ctrl.getLoginUrl = () => `/login?redirectUri=${$location.url()}`;
+    ctrl.getLoginUrl = () => {
+        return ctrl.errors.unauthorised.data.links[0].href
+    };
 
 }]);
 

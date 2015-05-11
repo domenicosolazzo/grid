@@ -171,6 +171,9 @@ kahuna.run(['$rootScope', 'globalErrors',
 
     $rootScope.$on('events:error:unauthorised', () => globalErrors.trigger('unauthorised'));
     $rootScope.$on('pandular:re-establishment:fail', () => globalErrors.trigger('authFailed'));
+
+    $rootScope.$on('events:error:unauthorised', (...args) => console.log("unauth", args));
+    $rootScope.$on('pandular:re-establishment:fail', (...args) => console.log("pandular", args));
 }]);
 
 // tracking errors
