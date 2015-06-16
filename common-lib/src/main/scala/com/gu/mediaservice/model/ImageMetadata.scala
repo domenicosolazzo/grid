@@ -18,6 +18,7 @@ case class ImageMetadata(
   suppliersReference:  Option[String]   = None,
   source:              Option[String]   = None,
   specialInstructions: Option[String]   = None,
+  jobDescription:      Option[String]   = None,
   keywords:            List[String]     = Nil,
   subLocation:         Option[String]   = None,
   city:                Option[String]   = None,
@@ -39,6 +40,7 @@ object ImageMetadata {
       (__ \ "suppliersReference").readNullable[String] ~
       (__ \ "source").readNullable[String] ~
       (__ \ "specialInstructions").readNullable[String] ~
+      (__ \ "jobDescription").readNullable[String] ~
       (__ \ "keywords").readNullable[List[String]].map(_ getOrElse Nil) ~
       (__ \ "subLocation").readNullable[String] ~
       (__ \ "city").readNullable[String] ~
@@ -59,6 +61,7 @@ object ImageMetadata {
       (__ \ "suppliersReference").writeNullable[String] ~
       (__ \ "source").writeNullable[String] ~
       (__ \ "specialInstructions").writeNullable[String] ~
+      (__ \ "jobDescription").writeNullable[String] ~
       (__ \ "keywords").write[List[String]] ~
       (__ \ "subLocation").writeNullable[String] ~
       (__ \ "city").writeNullable[String] ~

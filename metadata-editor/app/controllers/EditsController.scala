@@ -229,6 +229,7 @@ object EditsController extends Controller with ArgoHelpers {
       "suppliersReference" -> trueOptional(text),
       "source" -> trueOptional(text),
       "specialInstructions" -> trueOptional(text),
+      "jobDescription" -> trueOptional(text),
       "keywords" -> default(list(text), List()),
       "subLocation" -> trueOptional(text),
       "city" -> trueOptional(text),

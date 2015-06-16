@@ -63,6 +63,7 @@ object Mappings {
     "suppliersReference" -> standardAnalysedString,
     "source" -> nonAnalyzedString,
     "specialInstructions" -> nonAnalyzedString,
+    "jobDescription" -> standardAnalysedString,
     "keywords" -> nonAnalysedList("keyword"),
     "subLocation" -> standardAnalysedString,
     "city" -> standardAnalysedString,
