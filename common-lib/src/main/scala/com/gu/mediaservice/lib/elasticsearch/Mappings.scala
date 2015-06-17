@@ -28,6 +28,7 @@ object Mappings {
   def nonDynamicObj(obj: (String, JsValueWrapper)*) = Json.obj("type" -> "object", "dynamic" -> "strict", "properties" -> Json.obj(obj:_*))
 
   def nonAnalysedList(indexName: String) = Json.obj("type" -> "string", "index" -> "not_analyzed", "index_name" -> indexName)
+  def analysedList(indexName: String) = Json.obj("type" -> "string", "analyzer" -> "standard", "index_name" -> indexName)
 
   val identifiersMapping =
     nonDynamicObj(
@@ -63,6 +64,7 @@ object Mappings {
     "suppliersReference" -> standardAnalysedString,
     "source" -> nonAnalyzedString,
     "specialInstructions" -> nonAnalyzedString,
+    "subjectReference" -> analysedList("subjectReference"),
     "keywords" -> nonAnalysedList("keyword"),
     "subLocation" -> standardAnalysedString,
     "city" -> standardAnalysedString,
