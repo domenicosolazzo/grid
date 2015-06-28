@@ -1,12 +1,13 @@
 import angular from 'angular';
 import template from './archiver.html!text';
+import {component} from '../util/component';
 
+const directive = { scope: { archived: '=', withText: '=', disabled: '=' }};
 
-export var archiver = angular.module('kahuna.edits.archiver', []);
+export const archiver =
+    component('kahuna.edits', 'archiver', template, directive, ['$window', Archiver]);
 
-archiver.controller('ArchiverCtrl', ['$scope', '$window',
-                    function($scope, $window) {
-
+function Archiver($window) {
     var ctrl = this;
 
     ctrl.toggleArchived = toggleArchived;
@@ -26,18 +27,4 @@ archiver.controller('ArchiverCtrl', ['$scope', '$window',
                 ()  => $window.alert('Failed to save the changes, please try again.')
             ).finally(() => ctrl.archiving = false);
     }
-}]);
-
-archiver.directive('uiArchiver', [function() {
-    return {
-        restrict: 'E',
-        controller: 'ArchiverCtrl as archiver',
-        scope: {
-            archived: '=',
-            withText: '=',
-            disabled: '='
-        },
-        bindToController: true,
-        template: template
-    };
-}]);
+}
