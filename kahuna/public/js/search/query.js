@@ -1,19 +1,27 @@
 import angular from 'angular';
-import 'angular-animate';
+// FIXME: used to fade 'x' query clear button, but disabled as it ends
+// up being enabled globally and severely degrades the performance of
+// the lazy-table for results. Once there is a working way to disable
+// animations locally, we should turn it back on here.
+// import 'angular-animate';
 import moment from 'moment';
 import '../util/eq';
 import '../components/gu-date-range/gu-date-range';
 import template from './query.html!text';
 
+import '../analytics/track';
+
 export var query = angular.module('kahuna.search.query', [
-    'ngAnimate',
+    // Note: temporarily disabled for performance reasons, see above
+    // 'ngAnimate',
     'util.eq',
-    'gu-dateRange'
+    'gu-dateRange',
+    'analytics.track'
 ]);
 
 query.controller('SearchQueryCtrl',
-                 ['$scope', '$state', '$stateParams', 'onValChange', 'mediaApi',
-                 function($scope, $state, $stateParams, onValChange , mediaApi) {
+                 ['$scope', '$state', '$stateParams', 'onValChange', 'mediaApi', 'track',
+                 function($scope, $state, $stateParams, onValChange , mediaApi, track) {
 
     var ctrl = this;
     ctrl.filter = {
@@ -49,6 +57,11 @@ query.controller('SearchQueryCtrl',
             // FIXME: broken for 'your uploads'
             // FIXME: + they triggers filter $watch and $state.go (breaks history)
             ctrl.filter[key] = valOrUndefined(newVal);
+
+            // don't track changes to `query` as it would trigger on every keypress
+            if (key !== 'query') {
+                track.success('Query change', { field: key, value: newVal });
+            }
         }));
     }
 
