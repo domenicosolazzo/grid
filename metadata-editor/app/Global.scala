@@ -1,4 +1,4 @@
-import lib.MessageConsumer
+import lib.MetadataMessageConsumer
 import play.api.libs.concurrent.Akka
 import play.api.{Application, GlobalSettings}
 import play.api.mvc.WithFilters
@@ -12,7 +12,7 @@ import com.gu.mediaservice.lib.play.RequestLoggingFilter
 object Global extends WithFilters(CorsFilter, RequestLoggingFilter, new GzipFilter) with GlobalSettings {
 
   override def beforeStart(app: Application): Unit = {
-    MessageConsumer.startSchedule()
+    MetadataMessageConsumer.startSchedule()
   }
 
   override def onStart(app: Application) {
@@ -20,7 +20,7 @@ object Global extends WithFilters(CorsFilter, RequestLoggingFilter, new GzipFilt
   }
 
   override def onStop(app: Application): Unit = {
-    MessageConsumer.actorSystem.shutdown()
+    MetadataMessageConsumer.actorSystem.shutdown()
   }
 }
 
